@@ -2,6 +2,10 @@
 
 90分ハッカソン向けに作成した、Redmineのチケット管理を拡張するプロトタイプです。ビルド不要・`index.html` をブラウザで直接開くだけで動作します。
 
+**🔗 デモを見る: https://keisukefuruta.github.io/redmine-ticket-dashboard/**
+
+![ダッシュボード画面(レビュワー視点)](docs/screenshot.png)
+
 ## 背景・目的
 
 Redmineは業務のチケット管理基盤として使われているが、以下の課題がある。
