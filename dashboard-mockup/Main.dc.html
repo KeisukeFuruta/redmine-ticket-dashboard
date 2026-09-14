@@ -1,0 +1,437 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#14110f;
+      --surface:#1e1a17;
+      --surface-2:#262220;
+      --border:#34302b;
+      --track:#383835;
+      --ring:#2c2c2a;
+      --text:#f2ede7;
+      --text-secondary:#c3c2b7;
+      --text-muted:#898781;
+      --status-progress:#3987e5;
+      --status-progress-bg:rgba(57,135,229,0.18);
+      --status-progress-text:#8ec2f5;
+      --status-review:#c98500;
+      --status-review-bg:rgba(201,133,0,0.18);
+      --status-review-text:#e3b04d;
+      --status-done:#199e70;
+      --status-done-bg:rgba(25,158,112,0.18);
+      --status-done-text:#5fce9e;
+      --status-todo-bg:rgba(137,135,129,0.16);
+      --critical:#d03b3b;
+      --critical-bg:rgba(208,59,59,0.18);
+      --critical-text:#ea8683;
+      --warning:#fab219;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;background:var(--bg);font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;}
+    a{color:var(--status-progress);}
+    a:hover{color:#8ec2f5;}
+    .mono{font-family:'IBM Plex Mono',monospace;}
+    .page{padding:32px;min-height:1000px;}
+    .topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:24px;}
+    .title{margin:0;font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.01em;}
+    .subtitle{margin:4px 0 0;font-size:13px;color:var(--text-muted);}
+    .topbar-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+    .timestamp{font-size:11px;color:var(--text-muted);}
+    .segmented{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:3px;gap:2px;}
+    .seg-btn{border:none;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;border-radius:4px;}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;box-shadow:0 1px 2px rgba(0,0,0,0.35);}
+    .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;}
+    .card-title{font-size:14px;font-weight:600;color:var(--text);}
+    .count-badge{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--surface-2);border-radius:10px;padding:2px 9px;}
+    .critical-badge{font-size:11px;font-weight:600;color:var(--critical-text);background:var(--critical-bg);border-radius:10px;padding:2px 9px;}
+    .filter-select{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);font-family:inherit;font-size:12px;font-weight:500;padding:6px 10px;border-radius:6px;}
+    .filter-select svg{color:var(--text-muted);}
+
+    .id-cell{color:var(--text-muted);font-size:12px;white-space:nowrap;}
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;}
+    .badge-todo{background:var(--status-todo-bg);color:var(--text-secondary);}
+    .badge-progress{background:var(--status-progress-bg);color:var(--status-progress-text);}
+    .badge-review{background:var(--status-review-bg);color:var(--status-review-text);}
+    .badge-done{background:var(--status-done-bg);color:var(--status-done-text);}
+    .priority{display:inline-flex;align-items:center;gap:7px;color:var(--text-secondary);white-space:nowrap;}
+    .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
+    .dot-high{background:var(--critical);}
+    .dot-mid{background:var(--warning);}
+    .dot-low{background:var(--text-muted);}
+    .due{color:var(--text-secondary);white-space:nowrap;}
+    .due-overdue{color:var(--critical-text);font-weight:600;white-space:nowrap;}
+
+    .alert-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+    .alert-item:last-child{border-bottom:none;}
+    .alert-left{display:flex;flex-direction:column;gap:2px;min-width:0;}
+    .alert-title{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+    /* unified ticket list + gantt */
+    .gt-id{width:52px;flex-shrink:0;}
+    .gt-title{width:196px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .gt-assignee{width:56px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .gt-status{width:84px;flex-shrink:0;}
+    .gt-priority{width:52px;flex-shrink:0;}
+    .gt-due{width:60px;flex-shrink:0;}
+
+    .gt-header{display:flex;align-items:flex-end;gap:12px;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid var(--border);}
+    .gt-th{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;}
+    .gt-axis{flex:1;position:relative;height:14px;}
+    .gt-tick{position:absolute;top:0;transform:translateX(-50%);font-size:10px;color:var(--text-muted);white-space:nowrap;}
+    .gt-tick:first-child{transform:translateX(0);}
+    .gt-tick:last-child{transform:translateX(-100%);}
+    .gt-tick.today{color:var(--text);font-weight:600;}
+
+    .gt-row{display:flex;align-items:center;gap:12px;height:40px;border-bottom:1px solid var(--border);}
+    .gt-row:last-child{border-bottom:none;}
+    .gt-title-text{font-size:13px;color:var(--text);}
+    .gt-title-text.child{color:var(--text-secondary);font-size:12.5px;}
+    .tree-marker{color:var(--text-muted);margin-right:2px;}
+    .gt-track{flex:1;position:relative;height:18px;}
+    .gt-bar{position:absolute;top:0;height:100%;border-radius:3px;overflow:hidden;}
+    .gantt-fill{position:absolute;top:0;left:0;height:100%;border-radius:3px 0 0 3px;}
+    .today-line{position:absolute;top:-11px;bottom:-11px;left:50%;width:1px;background:var(--text-secondary);opacity:0.45;}
+
+    .legend{display:flex;align-items:center;gap:14px;}
+    .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);}
+    .legend-sw{width:8px;height:8px;border-radius:2px;display:inline-block;}
+
+    .member-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);}
+    .member-row:last-child{border-bottom:none;}
+    .member-name{width:104px;flex-shrink:0;}
+    .member-name .name{font-size:13px;font-weight:500;color:var(--text);display:block;}
+    .member-name .level{font-size:10.5px;color:var(--text-muted);display:block;margin-top:2px;}
+    .member-bars{flex:1;display:flex;flex-direction:column;gap:5px;}
+    .bar-line{display:flex;align-items:center;gap:8px;}
+    .bar-track{flex:1;height:8px;border-radius:3px;background:var(--surface-2);position:relative;}
+    .bar-fill{position:absolute;top:0;left:0;height:100%;border-radius:3px;}
+    .bar-value{width:30px;text-align:right;font-size:11px;color:var(--text-muted);flex-shrink:0;}
+    .load-footnote{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);}
+
+    .donut-row{display:flex;justify-content:space-around;align-items:flex-start;padding:4px 0 16px;}
+    .donut-item{display:flex;flex-direction:column;align-items:center;gap:8px;}
+    .donut-wrap{position:relative;width:88px;height:88px;}
+    .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .donut-pct{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--text);}
+    .donut-pct-label{font-size:9px;color:var(--text-muted);margin-top:2px;}
+    .donut-caption{font-size:13px;font-weight:600;color:var(--text);}
+    .donut-sub{font-size:11px;color:var(--text-muted);margin-top:-4px;}
+    .donut-legend{display:flex;justify-content:center;gap:16px;padding-top:14px;border-top:1px solid var(--border);}
+  </style>
+</helmet>
+
+<div class="page">
+
+  <div class="topbar">
+    <div>
+      <h1 class="title">Ticket Dashboard</h1>
+      <p class="subtitle">Redmineチケット集計 · 社内基幹システム刷新プロジェクト</p>
+    </div>
+    <div class="topbar-right">
+      <span class="timestamp mono">最終更新 09/11 10:30</span>
+      <div class="segmented">
+        <button class="seg-btn" style="background:{{accent}};color:#1c1512;">メンバー視点</button>
+        <button class="seg-btn">レビュワー視点</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- チケット一覧 + ガントチャート(統合) -->
+    <div class="card" style="grid-column:span 12;">
+      <div class="card-header">
+        <span class="card-title">チケット一覧</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="filter-select">
+            担当者: 全員
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="count-badge">8件</span>
+        </div>
+      </div>
+
+      <div class="gt-header">
+        <span class="gt-th gt-id">ID</span>
+        <span class="gt-th gt-title">タイトル</span>
+        <span class="gt-th gt-assignee">担当者</span>
+        <span class="gt-th gt-status">ステータス</span>
+        <span class="gt-th gt-priority">優先度</span>
+        <span class="gt-th gt-due">期限</span>
+        <div class="gt-axis">
+          <span class="gt-tick" style="left:0%;">9/4</span>
+          <span class="gt-tick" style="left:7.14%;">9/5</span>
+          <span class="gt-tick" style="left:14.29%;">9/6</span>
+          <span class="gt-tick" style="left:21.43%;">9/7</span>
+          <span class="gt-tick" style="left:28.57%;">9/8</span>
+          <span class="gt-tick" style="left:35.71%;">9/9</span>
+          <span class="gt-tick" style="left:42.86%;">9/10</span>
+          <span class="gt-tick today" style="left:50%;">9/11</span>
+          <span class="gt-tick" style="left:57.14%;">9/12</span>
+          <span class="gt-tick" style="left:64.29%;">9/13</span>
+          <span class="gt-tick" style="left:71.43%;">9/14</span>
+          <span class="gt-tick" style="left:78.57%;">9/15</span>
+          <span class="gt-tick" style="left:85.71%;">9/16</span>
+          <span class="gt-tick" style="left:92.86%;">9/17</span>
+          <span class="gt-tick" style="left:100%;">9/18</span>
+        </div>
+      </div>
+
+      <div class="gt-row">
+        <span class="gt-id id-cell mono">#1023</span>
+        <span class="gt-title"><span class="gt-title-text" style="font-weight:600;">ログイン画面のバリデーション修正</span></span>
+        <span class="gt-assignee">田中</span>
+        <span class="gt-status"><span class="badge badge-progress">進行中</span></span>
+        <span class="gt-priority"><span class="priority"><span class="dot dot-high"></span>高</span></span>
+        <span class="gt-due due mono">09/12</span>
+        <div class="gt-track">
+          <div class="gt-bar" style="left:7.14%;width:50.00%;background:var(--track);">
+            <div class="gantt-fill" style="width:70%;background:{{accent}};"></div>
+          </div>
+          <div class="today-line"></div>
+        </div>
+      </div>
+      <div class="gt-row">
+        <span class="gt-id id-cell mono"></span>
+        <span class="gt-title"><span class="gt-title-text child"><span class="tree-marker">└</span>#1024 入力チェックロジック実装</span></span>
+        <span class="gt-assignee" style="color:var(--text-muted);">田中</span>
+        <span class="gt-status"><span class="badge badge-done">完了</span></span>
+        <span class="gt-priority" style="color:var(--text-muted);">–</span>
+        <span class="gt-due due mono">09/08</span>
+        <div class="gt-track">
+          <div class="gt-bar" style="left:7.14%;width:21.43%;background:var(--status-done);"></div>
+          <div class="today-line"></div>
+        </div>
+      </div>
+      <div class="gt-row">
+        <span class="gt-id id-cell mono"></span>
+        <span class="gt-title"><span class="gt-title-text child"><span class="tree-marker">└</span>#1025 エラーメッセージ文言統一</span></span>
+        <span class="gt-assignee" style="color:var(--text-muted);">田中</span>
+        <span class="gt-status"><span class="badge badge-progress">進行中</span></span>
+        <span class="gt-priority" style="color:var(--text-muted);">–</span>
+        <span class="gt-due due mono">09/10</span>
+        <div class="gt-track">
+          <div class="gt-bar" style="left:28.57%;width:14.29%;background:var(--status-progress);"></div>
+          <div class="today-line"></div>
+        </div>
+      </div>
+      <div class="gt-row">
+        <span class="gt-id id-cell mono"></span>
+        <span class="gt-title"><span class="gt-title-text child"><span class="tree-marker">└</span>#1026 単体テスト作成</span></span>
+        <span class="gt-assignee" style="color:var(--text-muted);">田中</span>
+        <span class="gt-status"><span class="badge badge-todo">未着手</span></span>
+        <span class="gt-priority" style="color:var(--text-muted);">–</span>
+        <span class="gt-due due mono">09/12</span>
+        <div class="gt-track">
+          <div class="gt-bar" style="left:42.86%;width:14.29%;background:var(--text-muted);"></div>
+          <div class="today-line"></div>
+        </div>
+      </div>
+      <div class="gt-row">
+        <span class="gt-id id-cell mono">#1031</span>
+        <span class="gt-title"><span class="gt-title-text">APIレスポンスのキャッシュ対応</span></span>
+        <span class="gt-assignee">佐藤</span>
+        <span class="gt-status"><span class="badge badge-review">レビュー中</span></span>
+        <span class="gt-priority"><span class="priority"><span class="dot dot-mid"></span>中</span></span>
+        <span class="gt-due due mono">09/15</span>
+        <div class="gt-track">
+          <div class="gt-bar" style="left:35.71%;width:42.86%;background:var(--status-review);"></div>
+          <div class="today-line"></div>
+        </div>
+      </div>
+      <div class="gt-row">
+        <span class="gt-id id-cell mono">#1042</span>
+        <span class="gt-title"><span class="gt-title-text">ダッシュボード用集計バッチ作成</span></span>
+        <span class="gt-assignee">鈴木</span>
+        <span class="gt-status"><span class="badge badge-todo">未着手</span></span>
+        <span class="gt-priority"><span class="priority"><span class="dot dot-mid"></span>中</span></span>
+        <span class="gt-due due mono">09/18</span>
+        <div class="gt-track">
+          <div class="gt-bar" style="left:64.29%;width:35.71%;background:var(--text-muted);"></div>
+          <div class="today-line"></div>
+        </div>
+      </div>
+      <div class="gt-row">
+        <span class="gt-id id-cell mono">#1008</span>
+        <span class="gt-title"><span class="gt-title-text">通知メールテンプレート更新</span></span>
+        <span class="gt-assignee">高橋</span>
+        <span class="gt-status"><span class="badge badge-done">完了</span></span>
+        <span class="gt-priority"><span class="priority"><span class="dot dot-low"></span>低</span></span>
+        <span class="gt-due due mono">09/05</span>
+        <div class="gt-track">
+          <div class="gt-bar" style="left:0%;width:7.14%;background:var(--status-done);"></div>
+          <div class="today-line"></div>
+        </div>
+      </div>
+      <div class="gt-row">
+        <span class="gt-id id-cell mono">#1050</span>
+        <span class="gt-title"><span class="gt-title-text">検索機能のパフォーマンス改善</span></span>
+        <span class="gt-assignee">伊藤</span>
+        <span class="gt-status"><span class="badge badge-progress">進行中</span></span>
+        <span class="gt-priority"><span class="priority"><span class="dot dot-high"></span>高</span></span>
+        <span class="gt-due due-overdue mono">09/10</span>
+        <div class="gt-track">
+          <div class="gt-bar" style="left:14.29%;width:28.57%;background:var(--status-progress);border:1px solid var(--critical);"></div>
+          <div class="today-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 期限超過アラート -->
+    <div class="card" style="grid-column:span 4;">
+      <div class="card-header">
+        <span class="card-title">期限超過アラート</span>
+        <span class="critical-badge">3件</span>
+      </div>
+      <div class="alert-item">
+        <div class="alert-left">
+          <span class="id-cell mono">#1050</span>
+          <span class="alert-title">検索機能のパフォーマンス改善</span>
+        </div>
+        <span class="critical-badge">1日超過</span>
+      </div>
+      <div class="alert-item">
+        <div class="alert-left">
+          <span class="id-cell mono">#997</span>
+          <span class="alert-title">バッチ処理のエラーハンドリング修正</span>
+        </div>
+        <span class="critical-badge">3日超過</span>
+      </div>
+      <div class="alert-item">
+        <div class="alert-left">
+          <span class="id-cell mono">#1012</span>
+          <span class="alert-title">API仕様書の更新</span>
+        </div>
+        <span class="critical-badge">5日超過</span>
+      </div>
+    </div>
+
+    <!-- メンバー別チケット数・負荷スコア -->
+    <div class="card" style="grid-column:span 4;">
+      <div class="card-header">
+        <span class="card-title">メンバー別負荷</span>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-sw" style="background:var(--text-secondary);"></span>件数</span>
+          <span class="legend-item"><span class="legend-sw" style="background:{{accent}};"></span>負荷</span>
+        </div>
+      </div>
+
+      <div class="member-row">
+        <div class="member-name"><span class="name">田中</span><span class="level">ベテラン ×0.7</span></div>
+        <div class="member-bars">
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:88.9%;background:var(--text-secondary);"></div></div><span class="bar-value">8</span></div>
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:62.2%;background:{{accent}};"></div></div><span class="bar-value">5.6</span></div>
+        </div>
+      </div>
+      <div class="member-row">
+        <div class="member-name"><span class="name">佐藤</span><span class="level">中堅 ×1.0</span></div>
+        <div class="member-bars">
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:66.7%;background:var(--text-secondary);"></div></div><span class="bar-value">6</span></div>
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:66.7%;background:{{accent}};"></div></div><span class="bar-value">6.0</span></div>
+        </div>
+      </div>
+      <div class="member-row">
+        <div class="member-name"><span class="name">鈴木</span><span class="level">中堅 ×1.0</span></div>
+        <div class="member-bars">
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:77.8%;background:var(--text-secondary);"></div></div><span class="bar-value">7</span></div>
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:77.8%;background:{{accent}};"></div></div><span class="bar-value">7.0</span></div>
+        </div>
+      </div>
+      <div class="member-row">
+        <div class="member-name"><span class="name">高橋</span><span class="level">新人 ×1.5</span></div>
+        <div class="member-bars">
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:44.4%;background:var(--text-secondary);"></div></div><span class="bar-value">4</span></div>
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:66.7%;background:{{accent}};"></div></div><span class="bar-value">6.0</span></div>
+        </div>
+      </div>
+      <div class="member-row">
+        <div class="member-name"><span class="name">伊藤</span><span class="level">ベテラン ×0.7</span></div>
+        <div class="member-bars">
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--text-secondary);"></div></div><span class="bar-value">9</span></div>
+          <div class="bar-line"><div class="bar-track"><div class="bar-fill" style="width:70%;background:{{accent}};"></div></div><span class="bar-value">6.3</span></div>
+        </div>
+      </div>
+
+      <div class="load-footnote">負荷 = 件数 × 経験係数(ベテラン0.7 / 中堅1.0 / 新人1.5)</div>
+    </div>
+
+    <!-- バージョン別進捗 -->
+    <div class="card" style="grid-column:span 4;">
+      <div class="card-header">
+        <span class="card-title">バージョン別進捗</span>
+      </div>
+      <div class="donut-row">
+        <div class="donut-item">
+          <div class="donut-wrap">
+            <svg viewBox="0 0 100 100" width="88" height="88">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#2c2c2a" stroke-width="14"/>
+              <g transform="rotate(-90 50 50)">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#199e70" stroke-width="14" stroke-dasharray="163.4 251.3" stroke-dashoffset="0"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#3987e5" stroke-width="14" stroke-dasharray="62.8 251.3" stroke-dashoffset="-163.4"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#898781" stroke-width="14" stroke-dasharray="25.1 251.3" stroke-dashoffset="-226.2"/>
+              </g>
+            </svg>
+            <div class="donut-center"><span class="donut-pct">65%</span><span class="donut-pct-label">完了</span></div>
+          </div>
+          <span class="donut-caption">v2.4.0</span>
+          <span class="donut-sub">42件</span>
+        </div>
+        <div class="donut-item">
+          <div class="donut-wrap">
+            <svg viewBox="0 0 100 100" width="88" height="88">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#2c2c2a" stroke-width="14"/>
+              <g transform="rotate(-90 50 50)">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#199e70" stroke-width="14" stroke-dasharray="75.4 251.3" stroke-dashoffset="0"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#3987e5" stroke-width="14" stroke-dasharray="100.5 251.3" stroke-dashoffset="-75.4"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#898781" stroke-width="14" stroke-dasharray="75.4 251.3" stroke-dashoffset="-175.9"/>
+              </g>
+            </svg>
+            <div class="donut-center"><span class="donut-pct">30%</span><span class="donut-pct-label">完了</span></div>
+          </div>
+          <span class="donut-caption">v2.5.0</span>
+          <span class="donut-sub">58件</span>
+        </div>
+        <div class="donut-item">
+          <div class="donut-wrap">
+            <svg viewBox="0 0 100 100" width="88" height="88">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#2c2c2a" stroke-width="14"/>
+              <g transform="rotate(-90 50 50)">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#199e70" stroke-width="14" stroke-dasharray="12.6 251.3" stroke-dashoffset="0"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#3987e5" stroke-width="14" stroke-dasharray="37.7 251.3" stroke-dashoffset="-12.6"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#898781" stroke-width="14" stroke-dasharray="201.1 251.3" stroke-dashoffset="-50.3"/>
+              </g>
+            </svg>
+            <div class="donut-center"><span class="donut-pct">5%</span><span class="donut-pct-label">完了</span></div>
+          </div>
+          <span class="donut-caption">v2.6.0</span>
+          <span class="donut-sub">21件</span>
+        </div>
+      </div>
+      <div class="donut-legend">
+        <span class="legend-item"><span class="legend-sw" style="background:#199e70;"></span>完了</span>
+        <span class="legend-item"><span class="legend-sw" style="background:#3987e5;"></span>進行中</span>
+        <span class="legend-item"><span class="legend-sw" style="background:#898781;"></span>未着手</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#c1583a","options":["#c1583a","#b8452e","#3987e5","#199e70"]}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#c1583a' };
+  }
+}
+</script>
+</body>
+</html>
